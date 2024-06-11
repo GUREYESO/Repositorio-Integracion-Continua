@@ -1,0 +1,98 @@
+**Cómo se instalan contenedores docker en fedora**
+
+Para crear dos contenedores con Nginx en Fedora y configurar la conexión entre ellos utilizando `ping`, puedes seguir estos pasos:
+
+### Paso 1: Instalar Docker
+
+Si no tienes Docker instalado, primero necesitas instalarlo:
+
+```sh
+sudo dnf -y install dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+sudo dnf install docker-ce docker-ce-cli containerd.io
+```
+
+Inicia el servicio Docker y habilítalo para que se inicie al arrancar el sistema:
+
+```sh
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+### Paso 2: Crear una red personalizada
+
+Crear una red personalizada para que los contenedores puedan comunicarse entre sí:
+
+```sh
+docker network create my_network
+```
+
+### Paso 3: Crear y ejecutar los contenedores Nginx
+
+Crear y ejecutar los contenedores con nombres `nginx` y `nginx2` en la red personalizada:
+
+```sh
+docker run -d --name nginx --network my_network nginx
+docker run -d --name nginx2 --network my_network nginx
+```
+
+### Paso 4: Verificar la conexión entre los contenedores
+
+Ahora, verifica la conexión entre los contenedores utilizando `ping`. Primero, abre una terminal interactiva en uno de los contenedores:
+
+```sh
+docker exec -it nginx bash
+```
+
+Dentro del contenedor `nginx`, usa `ping` para verificar la conexión al contenedor `nginx2`:
+
+```sh
+ping nginx2
+```
+Si te aparece el error ping: command not found ocurre porque la imagen de Docker que estás utilizando no tiene la herramienta ping instalada.
+
+Para solucionar esto, puedes instalar iputils-ping (el paquete que contiene la herramienta ping) dentro del contenedor.
+
+Sal de la terminal del contenedor `nginx` con `exit`:
+
+```sh
+exit
+```
+
+### Paso 5: Comandos resumidos en un script
+
+Aquí tienes un script que automatiza estos pasos. Guarda este script en un archivo llamado `setup_nginx_containers.sh` y ejecútalo con permisos de superusuario:
+
+```sh
+#!/bin/bash
+
+# Instalar Docker
+sudo dnf -y install dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+sudo dnf install -y docker-ce docker-ce-cli containerd.io
+
+# Iniciar y habilitar el servicio Docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Crear una red personalizada
+docker network create my_network
+
+# Crear y ejecutar los contenedores Nginx
+docker run -d --name nginx --network my_network nginx
+docker run -d --name nginx2 --network my_network nginx
+
+# Verificar la conexión entre los contenedores
+echo "Para verificar la conexión, ejecute los siguientes comandos:"
+echo "docker exec -it nginx bash"
+echo "ping nginx2"
+```
+
+Para ejecutar el script:
+
+```sh
+chmod +x setup_nginx_containers.sh
+sudo ./setup_nginx_containers.sh
+```
+
+Después de ejecutar el script, sigue las instrucciones proporcionadas para verificar la conexión entre los contenedores.
